@@ -36,6 +36,11 @@ def do_start():
     return request_response
 
 def pause_start():
+    stop_response = do_stop()
+    if stop_response is not False and stop_response.ok:
+        print('Worktime stop Done.')
+    else:
+        print('Error: ' + stop_response.text)
     payload = {
         'userId': USER_ID,
         'start': get_time(),
@@ -52,6 +57,15 @@ def pause_start():
     request_response = requests.post(url, auth=hawk_auth, data=data, headers={'Content-Type': 'application/json'})
 
     return request_response
+
+def pause_stop():
+    stop_response = do_stop()
+    if stop_response is not False and stop_response.ok:
+        print('Breaktime stop Done.')
+    else:
+        print('Error: ' + stop_response.text)
+    start_response = do_start()
+    return start_response
 
 def do_stop():
     payload = {
@@ -97,6 +111,8 @@ if args.do == 'start':
     response = do_start()
 elif args.do == 'pause-start':
     response = pause_start()
+elif args.do == 'pause-stop':
+    response = pause_stop()
 else:
     response = do_stop()
 
