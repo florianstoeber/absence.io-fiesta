@@ -5,9 +5,9 @@ from datetime import datetime
 from requests_hawk import HawkAuth
 
 
-USER_ID = '<user_id>'
-API_KEY = '<api_key>'
-TIMEZONE_NAME = 'CET'
+USER_ID = ''
+API_KEY = ''
+TIMEZONE_NAME = 'CEST'
 TIMEZONE = '+0100'
 
 
@@ -35,6 +35,23 @@ def do_start():
 
     return request_response
 
+def pause_start():
+    payload = {
+        'userId': USER_ID,
+        'start': get_time(),
+        'end': None,
+        'timezoneName': TIMEZONE_NAME,
+        'timezone': TIMEZONE,
+        'type': 'break'
+    }
+
+    url = 'https://app.absence.io/api/v2/timespans/create'
+    data = json.dumps(payload)
+    hawk_auth = HawkAuth(id=USER_ID, key=API_KEY, server_url=url)
+
+    request_response = requests.post(url, auth=hawk_auth, data=data, headers={'Content-Type': 'application/json'})
+
+    return request_response
 
 def do_stop():
     payload = {
@@ -72,13 +89,14 @@ def do_stop():
 
     return request_response
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('do', help='start/stop')
 args = parser.parse_args()
 
 if args.do == 'start':
     response = do_start()
+elif args.do == 'pause-start':
+    response = pause_start()
 else:
     response = do_stop()
 
