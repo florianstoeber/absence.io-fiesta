@@ -14,5 +14,6 @@ TIMEZONE = '+0100'
 
 ## Run
 - run `python3 track.py start` to start tracking
-- run `python3 track.py pause-start` to start breaks
-- run `python3 track.py stop` to stop tracking and breaks
+- run `python3 track.py pause-start` to start breaks and stop tracking worktime
+- run `python3 track.py pause-stop` to stop breaks and start tracking worktime again
+- run `python3 track.py stop` to stop tracking
