@@ -17,6 +17,23 @@ def get_time():
     return '%s.%03dZ' % (dt, int(micro) / 1000)
 
 
+def get_current_timespan():
+    payload = {
+        'filter': {
+            'userId': USER_ID,
+            'end': {'$eq': None}
+        },
+        'limit': 10,
+        'skip': 0
+    }
+
+    url = 'https://app.absence.io/api/v2/timespans'
+    data = json.dumps(payload)
+    hawk_auth = HawkAuth(id=USER_ID, key=API_KEY, server_url=url)
+
+    request_response = requests.post(url, auth=hawk_auth, data=data, headers={'Content-Type': 'application/json'})
+    return request_response
+
 def do_start():
     payload = {
         'userId': USER_ID,
@@ -68,24 +85,38 @@ def pause_stop():
     return start_response
 
 def do_stop():
-    payload = {
-        'filter': {
-            'userId': USER_ID,
-            'end': {'$eq': None}
-        },
-        'limit': 10,
-        'skip': 0
-    }
-
-    url = 'https://app.absence.io/api/v2/timespans'
-    data = json.dumps(payload)
-    hawk_auth = HawkAuth(id=USER_ID, key=API_KEY, server_url=url)
-
-    request_response = requests.post(url, auth=hawk_auth, data=data, headers={'Content-Type': 'application/json'})
+    request_response = get_current_timespan()
     if request_response.ok:
         request_response = json.loads(request_response.text)
         entry = request_response['data'][0]
     else:
+        return request_response
+
+    payload = {
+        'start': entry['start'],
+        'end': get_time(),
+        'timezoneName': TIMEZONE_NAME,
+        'timezone': TIMEZONE
+    }
+
+    url = 'https://app.absence.io/api/v2/timespans/{}'.format(entry['_id'])
+    data = json.dumps(payload)
+    hawk_auth = HawkAuth(id=USER_ID, key=API_KEY, server_url=url)
+
+    request_response = requests.put(url, auth=hawk_auth, data=data, headers={'Content-Type': 'application/json'})
+
+    return request_response
+
+def do_worktime_stop():
+    request_response = get_current_timespan()
+    if request_response.ok:
+        request_response = json.loads(request_response.text)
+        print(request_response)
+        entry = request_response['data'][0]
+    else:
+        return False
+    if entry['type'] == 'break':
+        print('Please end your break with "pause-stop" before ending worktime tracking')
         return False
 
     payload = {
@@ -114,9 +145,11 @@ elif args.do == 'pause-start':
 elif args.do == 'pause-stop':
     response = pause_stop()
 else:
-    response = do_stop()
+    response = do_worktime_stop()
 
 if response is not False and response.ok:
     print('Done.')
+elif response is False:
+    print('The Current timeframe caused a problem')
 else:
     print('Error: ' + response.text)
